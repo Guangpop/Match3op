@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Match-3 Game - Phaser.js Powered</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+            color: white;
+        }
+
+        .app-container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .app-title {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-subtitle {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        #game-container {
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #F1C40F;
+        }
+
+        .controls-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .controls-info h3 {
+            margin-bottom: 15px;
+            color: #F1C40F;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 2px solid #E74C3C;
+            color: #F8F9FA;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .app-title {
+                font-size: 2em;
+            }
+            
+            .app-container {
+                padding: 15px;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* Loading animation */
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #F1C40F;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1 class="app-title">🎮 Match-3 Game</h1>
+
+        <div id="loading" class="loading">
+            <div class="loader"></div>
+            <p>Loading game engine...</p>
+        </div>
+
+        <div id="error-container" class="error" style="display: none;">
+            <h3>❌ Error Loading Game</h3>
+            <p id="error-message">Failed to initialize the game. Please refresh and try again.</p>
+        </div>
+
+        <!-- Phaser.js will create the canvas here -->
+        <div id="game-container"></div>
+
+
+    </div>
+
+    <!-- Load Phaser.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.min.js"></script>
+    
+    <!-- Load Complete Game Architecture -->
+    <script type="module">
+
+        // Initialize game when page loads
+        window.addEventListener('load', async () => {
+            try {
+                if (typeof Phaser === 'undefined') {
+                    throw new Error('Phaser.js failed to load from CDN');
+                }
+                
+                // Import the complete Match3Game architecture
+                const { Match3Game } = await import('./core/phaser-game.js');
+                
+                // Initialize the complete game
+                const game = new Match3Game('game-container');
+                window.match3Game = game;
+                
+                // Game is ready - hide loading
+                document.getElementById('loading').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Failed to initialize Match-3 game:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message || 'Unknown error occurred';
+            }
+        });
+    </script>
+</body>
+</html>

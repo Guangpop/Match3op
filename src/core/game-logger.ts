@@ -121,7 +121,7 @@ export class GameLogger {
     };
 
     const jsonContent = JSON.stringify(logData, null, 2);
-    const filename = `game-session-${this.sessionId}.json`;
+    // const filename = `game-session-${this.sessionId}.json`; // Removed unused variable
     
     // In browser environment, we'll just return the JSON content
     // The caller can handle saving it to the logs folder
@@ -146,7 +146,7 @@ export class GameLogger {
    * Get move statistics
    */
   getStats() {
-    const totalScore = this.logs.length > 0 ? this.logs[this.logs.length - 1].totalScore : 0;
+    const totalScore = this.logs.length > 0 ? this.logs[this.logs.length - 1]!.totalScore : 0;
     const totalCascades = this.logs.reduce((sum, log) => sum + log.cascadeEvents.length, 0);
     const averageScore = this.logs.length > 0 ? totalScore / this.logs.length : 0;
     
@@ -156,8 +156,8 @@ export class GameLogger {
       totalCascades,
       averageScorePerMove: Math.round(averageScore),
       sessionDuration: this.logs.length > 0 ? 
-        new Date(this.logs[this.logs.length - 1].timestamp).getTime() - 
-        new Date(this.logs[0].timestamp).getTime() : 0
+        new Date(this.logs[this.logs.length - 1]!.timestamp).getTime() - 
+        new Date(this.logs[0]!.timestamp).getTime() : 0
     };
   }
 

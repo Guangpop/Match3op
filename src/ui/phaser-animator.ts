@@ -3,8 +3,7 @@
  * Handles tile swapping, cascading, particles, and visual effects
  */
 
-// Using global Phaser from CDN - no import needed
-declare const Phaser: any;
+// Phaser is loaded globally from CDN in HTML
 import { Position, TileType } from '../core/board.js';
 
 export class PhaserAnimator {

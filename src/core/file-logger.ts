@@ -4,16 +4,16 @@
  */
 
 import { TileType, Position } from './board.js';
-import { MoveLog, CascadeEvent } from './game-logger.js';
+import { CascadeEvent } from './game-logger.js';
 
 export class FileLogger {
   private sessionId: string;
   private logFilePath: string;
-  private moveCount: number = 0;
+  // private moveCount: number = 0; // Removed unused variable
 
   constructor() {
     this.sessionId = new Date().toISOString().replace(/[:.]/g, '-');
-    this.logFilePath = `logs/game-session-${this.sessionId}.log`;
+    this.logFilePath = `logs/${this.sessionId}.log`;
     this.initializeLogFile();
   }
 
@@ -40,7 +40,7 @@ export class FileLogger {
     scoreGained: number,
     totalScore: number
   ): void {
-    this.moveCount = moveNumber;
+    // this.moveCount = moveNumber; // Removed unused assignment
     
     const logEntry = `
 📝 MOVE ${moveNumber} - ${new Date().toLocaleTimeString()}
@@ -186,15 +186,18 @@ ${this.formatBoard(boardAfter)}
   }
 
   private writeToLog(content: string): void {
-    // In browser environment, we'll use a different approach
-    // Store logs in memory and provide download functionality
+    // Always log to console for immediate debugging
+    console.log(content);
+    
+    // In browser environment, store in localStorage and provide download functionality
     if (typeof window !== 'undefined') {
-      // Browser environment - store in localStorage or memory
       const existingLogs = localStorage.getItem(this.logFilePath) || '';
       localStorage.setItem(this.logFilePath, existingLogs + content);
       
-      // Also log to console for immediate debugging
-      console.log(content);
+      // Also store in sessionStorage for current session
+      const sessionKey = `current-session-${this.sessionId}`;
+      const sessionLogs = sessionStorage.getItem(sessionKey) || '';
+      sessionStorage.setItem(sessionKey, sessionLogs + content);
     } else {
       // Node.js environment - would write to actual file
       console.log(`[LOG] ${content}`);
@@ -248,6 +251,85 @@ ${this.formatBoard(boardAfter)}
   clearLogs(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(this.logFilePath);
+      const sessionKey = `current-session-${this.sessionId}`;
+      sessionStorage.removeItem(sessionKey);
     }
+  }
+
+  /**
+   * Log error with detailed information
+   */
+  logError(error: Error, context: string = ''): void {
+    const errorEntry = `
+🚨 ERROR - ${new Date().toLocaleTimeString()}
+=====================================
+📍 Context: ${context}
+❌ Error: ${error.message}
+📋 Stack: ${error.stack || 'No stack trace available'}
+=====================================
+
+`;
+    this.writeToLog(errorEntry);
+  }
+
+  /**
+   * Log debug information
+   */
+  logDebug(message: string, data?: any): void {
+    const debugEntry = `
+🐛 DEBUG - ${new Date().toLocaleTimeString()}
+=====================================
+💬 Message: ${message}
+${data ? `📊 Data: ${JSON.stringify(data, null, 2)}` : ''}
+=====================================
+
+`;
+    this.writeToLog(debugEntry);
+  }
+
+  /**
+   * Log game state change
+   */
+  logGameStateChange(changeType: string, details: any): void {
+    const stateEntry = `
+🔄 STATE CHANGE - ${new Date().toLocaleTimeString()}
+=====================================
+📝 Type: ${changeType}
+📊 Details: ${JSON.stringify(details, null, 2)}
+=====================================
+
+`;
+    this.writeToLog(stateEntry);
+  }
+
+  /**
+   * Get current session logs from memory
+   */
+  getCurrentSessionLogs(): string {
+    if (typeof window !== 'undefined') {
+      const sessionKey = `current-session-${this.sessionId}`;
+      return sessionStorage.getItem(sessionKey) || '';
+    }
+    return '';
+  }
+
+  /**
+   * Get all stored logs
+   */
+  getAllStoredLogs(): { [key: string]: string } {
+    if (typeof window !== 'undefined') {
+      const logs: { [key: string]: string } = {};
+      
+      // Get all localStorage keys that start with 'logs/'
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('logs/')) {
+          logs[key] = localStorage.getItem(key) || '';
+        }
+      }
+      
+      return logs;
+    }
+    return {};
   }
 }

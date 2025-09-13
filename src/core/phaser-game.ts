@@ -3,8 +3,7 @@
  * Sets up Phaser.js game instance with WebGL/Canvas rendering
  */
 
-// Using global Phaser from CDN - no import needed
-declare const Phaser: any;
+// Phaser is loaded globally from CDN in HTML
 import { Match3Scene } from '../ui/phaser-renderer.js';
 
 export class Match3Game {
@@ -19,7 +18,7 @@ export class Match3Game {
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO, // WebGL with Canvas fallback
       width: 800,
-      height: 700,
+      height: 800,
       parent: containerId,
       backgroundColor: '#2C3E50',
       scene: Match3Scene,

@@ -3,20 +3,17 @@
  * Handles hardware-accelerated rendering, sprites, and user input
  */
 
-// Using global Phaser from CDN - no import needed
-declare const Phaser: any;
+// Phaser is loaded globally from CDN in HTML
 import { BoardManager, TileType, Position } from '../core/board.js';
 import { MatchEngine } from '../core/match.js';
 import { PhaserAnimator } from './phaser-animator.js';
-import { GameLogger, CascadeEvent } from '../core/game-logger.js';
-import { FileLogger } from '../core/file-logger.js';
+import { CascadeEvent } from '../core/game-logger.js';
+import { logManager } from '../core/log-manager.js';
 
 export class Match3Scene extends Phaser.Scene {
   private boardManager!: BoardManager;
   private matchEngine!: MatchEngine;
   private animator!: PhaserAnimator;
-  private gameLogger!: GameLogger;
-  private fileLogger!: FileLogger;
   
   // Game objects
   private tileSprites: Phaser.GameObjects.Sprite[][];
@@ -61,8 +58,13 @@ export class Match3Scene extends Phaser.Scene {
     this.boardManager = new BoardManager();
     this.matchEngine = new MatchEngine();
     this.animator = new PhaserAnimator(this);
-    this.gameLogger = new GameLogger();
-    this.fileLogger = new FileLogger();
+    
+    // Debug: Test logging system
+    console.log('🎮 Game Scene: Testing logging system...');
+    logManager.logDebug('Game scene initialized', { 
+      timestamp: new Date().toISOString(),
+      boardSize: this.BOARD_SIZE 
+    });
     
     // Create UI
     this.createBackground();
@@ -181,7 +183,7 @@ export class Match3Scene extends Phaser.Scene {
   }
 
   private createButtons(): void {
-    const buttonY = this.BOARD_OFFSET_Y + this.BOARD_SIZE * this.TILE_SIZE + 40;
+    const buttonY = this.BOARD_OFFSET_Y + this.BOARD_SIZE * this.TILE_SIZE + 20;
     const buttonStyle = {
       fontSize: '16px',
       fontFamily: 'Arial',
@@ -215,7 +217,7 @@ export class Match3Scene extends Phaser.Scene {
       .on('pointerout', () => resetBtn.setStyle({ backgroundColor: '#E74C3C' }));
 
     // Export logs button
-    const exportBtn = this.add.text(this.BOARD_OFFSET_X + 330, buttonY, '📁 Export', {
+    const exportBtn = this.add.text(this.BOARD_OFFSET_X + 320, buttonY, '📁 Export', {
       ...buttonStyle,
       backgroundColor: '#9B59B6'
     })
@@ -322,7 +324,7 @@ export class Match3Scene extends Phaser.Scene {
     }
 
     // Log board state before move
-    this.gameLogger.printBoard(boardStateBefore, "Before Swap");
+    logManager.logBoardState("Before Swap", boardStateBefore);
 
     // Valid swap - start animation sequence
     this.isAnimating = true;
@@ -348,36 +350,26 @@ export class Match3Scene extends Phaser.Scene {
 
     // Log the complete move
     const boardStateAfter = this.boardManager.getBoard();
-    this.gameLogger.logMove(
+    logManager.logPlayerMove(
+      logManager.getMoveLogs().length + 1,
       { pos1, pos2, tile1Type, tile2Type },
       boardStateBefore,
-      matches.matches,
+      matches.matches.map(m => m.positions),
       cascadeEvents,
       boardStateAfter,
       scoreGained,
       this.score
     );
 
-    // Also log to file for debugging
-    this.fileLogger.logPlayerMove(
-      this.gameLogger.getLogs().length,
-      { pos1, pos2, tile1Type, tile2Type },
-      boardStateBefore,
-      matches.matches,
-      cascadeEvents,
-      boardStateAfter,
-      scoreGained,
-      this.score
-    );
-
-    this.gameLogger.printBoard(boardStateAfter, "After All Cascades");
-    this.gameLogger.printStats();
+    logManager.logBoardState("After All Cascades", boardStateAfter);
+    logManager.printGameStats();
 
     this.isAnimating = false;
     this.updateStatus('Swap completed! Look for your next move.');
   }
 
-  private async processCascadingMatches(): Promise<void> {
+  /*
+  private async processCascadingMatches(): Promise<void> { // Will be implemented later
     let cascadeLevel = 1;
 
     while (true) {
@@ -413,6 +405,7 @@ export class Match3Scene extends Phaser.Scene {
       this.updateDisplay();
     }
   }
+  */
 
   private async processCascadingMatchesWithLogging(): Promise<CascadeEvent[]> {
     const cascadeEvents: CascadeEvent[] = [];
@@ -450,7 +443,7 @@ export class Match3Scene extends Phaser.Scene {
       const boardAfterGravity = this.boardManager.getBoard();
       
       // Log falling tiles to file
-      this.fileLogger.logFallingTiles(movements, boardBeforeGravity, boardAfterGravity);
+      logManager.logFallingTiles(movements, boardBeforeGravity, boardAfterGravity);
       
       // Convert movements to falling tiles log format
       const fallingTiles = Array.from(movements.entries()).map(([key, toPos]) => {
@@ -470,7 +463,7 @@ export class Match3Scene extends Phaser.Scene {
       const boardAfterRefill = this.boardManager.getBoard();
       
       // Log refill operation to file
-      this.fileLogger.logRefill(boardBeforeRefill, boardAfterRefill);
+      logManager.logRefill(boardBeforeRefill, boardAfterRefill);
 
       // Find newly spawned tiles (compare before and after refill)
       const newTilesSpawned: Array<{ position: Position; tileType: TileType }> = [];
@@ -491,7 +484,7 @@ export class Match3Scene extends Phaser.Scene {
       await this.animator.animateSpawningTiles(this.tileSprites, boardAfterRefill);
 
       // Create cascade event log
-      const cascadeEvent = this.gameLogger.createCascadeEvent(
+      const cascadeEvent = logManager.createCascadeEvent(
         cascadeLevel,
         matchResult.clearedPositions,
         cascadeScore,
@@ -609,18 +602,18 @@ export class Match3Scene extends Phaser.Scene {
     return this.matchEngine;
   }
 
-  public getGameLogger(): GameLogger {
-    return this.gameLogger;
+  public getLogManager() {
+    return logManager;
   }
 
   public async exportGameLogs(): Promise<void> {
     try {
       // Export .log file with detailed debugging info
-      this.fileLogger.exportLogsAsFile();
+      logManager.exportLogsAsFile();
       
       // Also export JSON logs
-      const logContent = await this.gameLogger.exportLogs();
-      const sessionId = this.fileLogger.getSessionId();
+      const logContent = await logManager.exportLogsAsJSON();
+      const sessionId = logManager.getSessionId();
       const filename = `game-session-${sessionId}.json`;
       
       // Create downloadable blob
@@ -639,11 +632,12 @@ export class Match3Scene extends Phaser.Scene {
       document.body.removeChild(downloadLink);
       URL.revokeObjectURL(url);
       
-      console.log(`📁 Logs exported: ${this.fileLogger.getLogFilePath()}`);
+      console.log(`📁 Logs exported: ${logManager.getSessionId()}`);
       this.updateStatus(`📁 Log files exported`);
     } catch (error) {
       console.error('Failed to export logs:', error);
       this.updateStatus('❌ Failed to export logs');
     }
   }
+
 }
