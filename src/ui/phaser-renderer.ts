@@ -340,7 +340,8 @@ export class Match3Scene extends Phaser.Scene {
     // Animate the swap
     await this.animator.animateSwap(
       this.tileSprites[pos1.row]![pos1.col]!,
-      this.tileSprites[pos2.row]![pos2.col]!
+      this.tileSprites[pos2.row]![pos2.col]!,
+      this.tileSprites
     );
 
     // Process cascading matches and collect log data
@@ -569,13 +570,68 @@ export class Match3Scene extends Phaser.Scene {
 
   private updateDisplay(): void {
     this.scoreText.setText(this.score.toString());
-    
+
     const boardState = this.boardManager.getBoard();
     const validMoves = this.matchEngine.getAllValidSwaps(boardState);
     this.validMovesText.setText(`Moves: ${validMoves.length}`);
 
     if (validMoves.length === 0) {
       this.updateStatus('🎯 Game Over! No more valid moves.');
+    }
+
+    // Force sync sprites with board state to fix visual inconsistencies
+    this.syncSpritesWithBoard();
+  }
+
+  /**
+   * Synchronize sprite array with actual board state
+   * This fixes cases where sprites may be in wrong positions due to animation issues
+   */
+  private syncSpritesWithBoard(): void {
+    const boardState = this.boardManager.getBoard();
+
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const currentSprite = this.tileSprites[row]?.[col];
+        const expectedType = boardState[row]?.[col];
+
+        if (expectedType !== undefined && expectedType >= 0) {
+          // Should have a sprite here
+          if (!currentSprite || currentSprite.getData('tileType') !== expectedType) {
+            // Sprite is missing or wrong type, need to fix
+            if (currentSprite) {
+              currentSprite.destroy();
+            }
+
+            // Create new sprite at correct position
+            const x = this.BOARD_OFFSET_X + col * this.TILE_SIZE + this.TILE_SIZE / 2;
+            const y = this.BOARD_OFFSET_Y + row * this.TILE_SIZE + this.TILE_SIZE / 2;
+
+            const sprite = this.add.sprite(x, y, `tile_${expectedType}`)
+              .setInteractive()
+              .setData('row', row)
+              .setData('col', col)
+              .setData('tileType', expectedType);
+
+            this.tileSprites[row]![col] = sprite;
+          } else {
+            // Sprite exists and correct type, but verify position
+            const expectedX = this.BOARD_OFFSET_X + col * this.TILE_SIZE + this.TILE_SIZE / 2;
+            const expectedY = this.BOARD_OFFSET_Y + row * this.TILE_SIZE + this.TILE_SIZE / 2;
+
+            if (currentSprite.x !== expectedX || currentSprite.y !== expectedY) {
+              currentSprite.x = expectedX;
+              currentSprite.y = expectedY;
+            }
+          }
+        } else {
+          // Should NOT have a sprite here
+          if (currentSprite) {
+            currentSprite.destroy();
+            this.tileSprites[row]![col] = null as any;
+          }
+        }
+      }
     }
   }
 
@@ -607,36 +663,43 @@ export class Match3Scene extends Phaser.Scene {
 
   public async exportGameLogs(): Promise<void> {
     try {
-      // Export .log file with detailed debugging info
-      logManager.exportLogsAsFile();
-      
-      // Also export JSON logs
-      const logContent = await logManager.exportLogsAsJSON();
       const sessionId = logManager.getSessionId();
-      const filename = `game-session-${sessionId}.json`;
-      
-      // Create downloadable blob
-      const blob = new Blob([logContent], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      
-      // Create download link
-      const downloadLink = document.createElement('a');
-      downloadLink.href = url;
-      downloadLink.download = filename;
-      downloadLink.style.display = 'none';
-      
-      // Trigger download
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(url);
-      
-      console.log(`📁 Logs exported: ${logManager.getSessionId()}`);
-      this.updateStatus(`📁 Log files exported`);
+
+      // Export .log file to server
+      const logContent = logManager.getCurrentSessionLogs();
+      await this.saveLogToServer(sessionId, logContent, 'log');
+
+      // Also export JSON logs to server
+      const jsonContent = await logManager.exportLogsAsJSON();
+      await this.saveLogToServer(sessionId, jsonContent, 'json');
+
+      console.log(`📁 Logs saved to server: ${sessionId}`);
+      this.updateStatus(`📁 Log files saved to /logs directory`);
     } catch (error) {
-      console.error('Failed to export logs:', error);
-      this.updateStatus('❌ Failed to export logs');
+      console.error('Failed to save logs to server:', error);
+      this.updateStatus('❌ Failed to save logs to server');
     }
+  }
+
+  private async saveLogToServer(sessionId: string, content: string, type: 'log' | 'json'): Promise<void> {
+    const response = await fetch('http://localhost:3001/api/save-log', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sessionId,
+        content,
+        type
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`Server response: ${result.message}`);
   }
 
 }

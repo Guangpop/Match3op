@@ -19,7 +19,7 @@ export class PhaserAnimator {
   /**
    * Animate a valid tile swap with smooth tweening
    */
-  async animateSwap(sprite1: Phaser.GameObjects.Sprite, sprite2: Phaser.GameObjects.Sprite): Promise<void> {
+  async animateSwap(sprite1: Phaser.GameObjects.Sprite, sprite2: Phaser.GameObjects.Sprite, tileSprites: Phaser.GameObjects.Sprite[][]): Promise<void> {
     return new Promise((resolve) => {
       const pos1 = { x: sprite1.x, y: sprite1.y };
       const pos2 = { x: sprite2.x, y: sprite2.y };
@@ -54,13 +54,21 @@ export class PhaserAnimator {
         const tempCol = sprite1.getData('col');
         const tempType = sprite1.getData('tileType');
 
-        sprite1.setData('row', sprite2.getData('row'));
-        sprite1.setData('col', sprite2.getData('col'));
-        sprite1.setData('tileType', sprite2.getData('tileType'));
+        const sprite2Row = sprite2.getData('row');
+        const sprite2Col = sprite2.getData('col');
+        const sprite2Type = sprite2.getData('tileType');
+
+        sprite1.setData('row', sprite2Row);
+        sprite1.setData('col', sprite2Col);
+        sprite1.setData('tileType', sprite2Type);
 
         sprite2.setData('row', tempRow);
         sprite2.setData('col', tempCol);
         sprite2.setData('tileType', tempType);
+
+        // Swap sprites in the array
+        tileSprites[tempRow]![tempCol] = sprite2;
+        tileSprites[sprite2Row]![sprite2Col] = sprite1;
 
         resolve();
       });
@@ -184,6 +192,16 @@ export class PhaserAnimator {
         onComplete: () => {
           // Clean up particle emitters
           particleEmitters.forEach(emitter => emitter.destroy());
+
+          // Remove sprites from array and destroy them
+          positions.forEach(pos => {
+            const sprite = tileSprites[pos.row]?.[pos.col];
+            if (sprite) {
+              sprite.destroy();
+              tileSprites[pos.row]![pos.col] = null as any;
+            }
+          });
+
           resolve();
         }
       });
@@ -223,8 +241,9 @@ export class PhaserAnimator {
               sprite.setData('row', newPos.row);
               sprite.setData('col', newPos.col);
 
-              // Move sprite to new position in array
-              tileSprites[newPos.row]![newPos.col] = sprite;
+              // Clear old position in sprite array and update new position
+              tileSprites[oldRow!]![oldCol!] = null as any; // Clear old position
+              tileSprites[newPos.row]![newPos.col] = sprite; // Set new position
 
               completedAnimations++;
               if (completedAnimations === animationsToComplete) {
