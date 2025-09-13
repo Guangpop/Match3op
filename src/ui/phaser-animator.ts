@@ -181,6 +181,11 @@ export class PhaserAnimator {
         }
       });
 
+      // Immediately remove sprites from array to prevent visual artifacts
+      positions.forEach(pos => {
+        tileSprites[pos.row]![pos.col] = null as any;
+      });
+
       // Animate tiles disappearing
       this.scene.tweens.add({
         targets: spritesToAnimate,
@@ -193,14 +198,8 @@ export class PhaserAnimator {
           // Clean up particle emitters
           particleEmitters.forEach(emitter => emitter.destroy());
 
-          // Remove sprites from array and destroy them
-          positions.forEach(pos => {
-            const sprite = tileSprites[pos.row]?.[pos.col];
-            if (sprite) {
-              sprite.destroy();
-              tileSprites[pos.row]![pos.col] = null as any;
-            }
-          });
+          // Destroy the animated sprites
+          spritesToAnimate.forEach(sprite => sprite.destroy());
 
           resolve();
         }

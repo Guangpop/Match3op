@@ -590,6 +590,9 @@ export class Match3Scene extends Phaser.Scene {
   private syncSpritesWithBoard(): void {
     const boardState = this.boardManager.getBoard();
 
+    // First, destroy any orphaned sprites that might be lingering
+    this.cleanupOrphanedSprites();
+
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         const currentSprite = this.tileSprites[row]?.[col];
@@ -611,7 +614,9 @@ export class Match3Scene extends Phaser.Scene {
               .setInteractive()
               .setData('row', row)
               .setData('col', col)
-              .setData('tileType', expectedType);
+              .setData('tileType', expectedType)
+              .setAlpha(1)
+              .setScale(1);
 
             this.tileSprites[row]![col] = sprite;
           } else {
@@ -623,6 +628,9 @@ export class Match3Scene extends Phaser.Scene {
               currentSprite.x = expectedX;
               currentSprite.y = expectedY;
             }
+
+            // Ensure sprite is fully visible
+            currentSprite.setAlpha(1).setScale(1);
           }
         } else {
           // Should NOT have a sprite here
@@ -700,6 +708,49 @@ export class Match3Scene extends Phaser.Scene {
 
     const result = await response.json();
     console.log(`Server response: ${result.message}`);
+  }
+
+  /**
+   * Clean up any orphaned sprites that might be lingering in the scene
+   * This prevents sprite accumulation over multiple cascades
+   */
+  private cleanupOrphanedSprites(): void {
+    // Get all sprites in the game area
+    const gameObjects = this.children.list;
+
+    gameObjects.forEach((obj: any) => {
+      if (obj instanceof Phaser.GameObjects.Sprite) {
+        const sprite = obj as Phaser.GameObjects.Sprite;
+
+        // Check if this sprite is in our tile area
+        const isInTileArea =
+          sprite.x >= this.BOARD_OFFSET_X &&
+          sprite.x <= this.BOARD_OFFSET_X + 8 * this.TILE_SIZE &&
+          sprite.y >= this.BOARD_OFFSET_Y &&
+          sprite.y <= this.BOARD_OFFSET_Y + 8 * this.TILE_SIZE;
+
+        if (isInTileArea) {
+          // Check if this sprite is properly tracked in our array
+          let isTracked = false;
+
+          for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+              if (this.tileSprites[row]?.[col] === sprite) {
+                isTracked = true;
+                break;
+              }
+            }
+            if (isTracked) break;
+          }
+
+          // If not tracked, it's an orphaned sprite
+          if (!isTracked) {
+            console.warn(`🧹 Cleaning up orphaned sprite at (${sprite.x}, ${sprite.y})`);
+            sprite.destroy();
+          }
+        }
+      }
+    });
   }
 
 }

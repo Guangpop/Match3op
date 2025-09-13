@@ -1,5 +1,6 @@
 dist/
 node_modules/
+logs/
 
 # macOS
 .DS_Store
