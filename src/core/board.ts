@@ -263,9 +263,10 @@ export class BoardManager {
       }
 
       // Place tiles from bottom up, maintaining their relative order
+      // Start from the bottom of the board and place tiles upward
       for (let i = 0; i < validTiles.length; i++) {
-        const targetRow = this.BOARD_SIZE - validTiles.length + i;
-        const { tile, originalRow } = validTiles[i]!;
+        const targetRow = this.BOARD_SIZE - 1 - i; // Place from bottom: 7, 6, 5, ...
+        const { tile, originalRow } = validTiles[validTiles.length - 1 - i]!; // Take from last to first
 
         // Ensure board row exists
         if (!this.board[targetRow]) {

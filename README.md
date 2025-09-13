@@ -87,7 +87,6 @@ match3op/
 │   │   └── phaser-animator.ts  # Hardware-accelerated animations
 │   └── index.ts                # CLI entry point
 ├── tests/              # Unit tests
-├── docs/               # Project documentation
 └── dist/               # Build output
 ```
 
