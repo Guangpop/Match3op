@@ -1,27 +1,27 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件為 Claude Code (claude.ai/code) 在此程式庫中工作時提供指引。
 
-## Project Overview
-This is a **completed Match-3 puzzle game** powered by **Phaser.js 3.80** game engine, designed for WebView environments (iOS/Android). The game features hardware-accelerated graphics, particle effects, and professional-quality animations running at 60fps.
+## 專案概述
+這是一個**已完成的三消益智遊戲**，使用 **Phaser.js 3.80** 遊戲引擎，專為 WebView 環境（iOS/Android）設計。遊戲具有硬體加速圖形、粒子效果和專業品質的 60fps 動畫。
 
-## ⚠️ CRITICAL RULE: NO SIMPLIFIED VERSIONS
-**NEVER EVER CREATE SIMPLIFIED, BASIC, OR TEST VERSIONS OF ANYTHING**
-- Do NOT create files with names like "simple-*", "basic-*", "test-*" unless they are proper unit tests
-- Do NOT write simplified implementations when complete architecture already exists
-- Do NOT bypass existing architecture with inline code in HTML files
-- ALWAYS use the existing complete Phaser.js architecture components
-- If something needs fixing, fix the existing architecture, don't create workarounds
+## ⚠️ 重要規則：不創建簡化版本
+**絕對不要創建簡化、基礎或測試版本**
+- 不要創建名為 "simple-*"、"basic-*"、"test-*" 的文件（除非是正當的單元測試）
+- 當完整架構已存在時，不要寫簡化實現
+- 不要用 HTML 內聯程式碼繞過現有架構
+- 總是使用現有的完整 Phaser.js 架構組件
+- 如果需要修復，修復現有架構，不要創建變通方案
 
-## Project Structure
-This is a self-contained Match-3 puzzle game with all necessary components included in the codebase.
+## 專案結構
+這是一個自含的三消益智遊戲，程式庫中包含所有必要組件。
 
-## Implemented Architecture ✅ COMPLETED
-The codebase follows a clean modular structure:
-- `src/core/` - Game logic (board.ts, match.ts, cascade.ts, phaser-game.ts)
-- `src/ui/` - Phaser.js rendering and animations (phaser-renderer.ts, phaser-animator.ts)
-- `dist/` - Built game running at http://127.0.0.1:3002
-- `tests/` - Unit tests are only needed if they test ACTUAL game components used by the main game
+## 已實現架構 ✅ 完成
+程式庫遵循清潔的模組化結構：
+- `src/core/` - 遊戲邏輯（board.ts, match.ts, cascade.ts, phaser-game.ts）
+- `src/ui/` - Phaser.js 渲染和動畫（phaser-renderer.ts, phaser-animator.ts）
+- `dist/` - 在 http://127.0.0.1:3002 運行的編譯遊戲
+- `tests/` - 只有在測試主遊戲使用的實際遊戲組件時才需要單元測試
 
 ## Technology Stack ✅ IMPLEMENTED
 - **Language**: TypeScript with strict mode compliance

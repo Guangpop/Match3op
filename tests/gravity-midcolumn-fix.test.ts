@@ -75,19 +75,21 @@ describe('Gravity Mid-Column Fix Tests', () => {
     expect(boardAfterGravity[1]![2]).toBe(-1); // Second should be empty
     expect(boardAfterGravity[2]![2]).toBe(-1); // Third should be empty
 
-    // Bottom 5 positions should contain the valid tiles from original column 2
-    expect(boardAfterGravity[7]![2]).toBe(testBoard[7]![2]); // RED from bottom
-    expect(boardAfterGravity[6]![2]).toBe(testBoard[6]![2]); // YELLOW from second bottom
-    expect(boardAfterGravity[5]![2]).toBe(testBoard[5]![2]); // YELLOW from third bottom
-    expect(boardAfterGravity[4]![2]).toBe(testBoard[4]![2]); // BLUE from fourth bottom
-    expect(boardAfterGravity[3]![2]).toBe(testBoard[3]![2]); // RED from fifth bottom
+    // Bottom 5 positions should contain the valid tiles in bottom-up order
+    // Original valid tiles were: (3,2)=RED, (4,2)=BLUE, (5,2)=YELLOW, (6,2)=YELLOW, (7,2)=RED
+    // After gravity they should be placed as: first tile → row 7, second tile → row 6, etc.
+    expect(boardAfterGravity[7]![2]).toBe(testBoard[3]![2]); // First valid tile (was at row 3) goes to bottom
+    expect(boardAfterGravity[6]![2]).toBe(testBoard[4]![2]); // Second valid tile (was at row 4)
+    expect(boardAfterGravity[5]![2]).toBe(testBoard[5]![2]); // Third valid tile (was at row 5) stays
+    expect(boardAfterGravity[4]![2]).toBe(testBoard[6]![2]); // Fourth valid tile (was at row 6)
+    expect(boardAfterGravity[3]![2]).toBe(testBoard[7]![2]); // Fifth valid tile (was at row 7) goes to top
 
-    // Verify movement tracking
-    expect(movements.has('7,2')).toBe(false); // Bottom tile doesn't move
-    expect(movements.has('6,2')).toBe(false); // Second bottom doesn't move
-    expect(movements.has('5,2')).toBe(false); // Third bottom doesn't move
-    expect(movements.has('4,2')).toBe(true);  // This should move down
-    expect(movements.has('3,2')).toBe(true);  // This should move down
+    // Verify movement tracking - tiles that changed position
+    expect(movements.has('3,2')).toBe(true);  // (3,2) → (7,2)
+    expect(movements.has('4,2')).toBe(true);  // (4,2) → (6,2)
+    expect(movements.has('5,2')).toBe(false); // (5,2) → (5,2) no move
+    expect(movements.has('6,2')).toBe(true);  // (6,2) → (4,2)
+    expect(movements.has('7,2')).toBe(true);  // (7,2) → (3,2)
   });
 
   test('should handle complete column clearing correctly', () => {

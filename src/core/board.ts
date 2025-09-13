@@ -240,14 +240,16 @@ export class BoardManager {
 
   /**
    * Apply gravity - move tiles down to fill empty spaces
+   * 重力系統：讓方塊向下掉落填滿空格，保持原有順序
    * Returns mapping of old position to new position for animation
    */
   applyGravity(): Map<string, Position> {
     const movements = new Map<string, Position>();
 
     for (let col = 0; col < this.BOARD_SIZE; col++) {
-      // Collect non-empty tiles from top to bottom, preserving order
+      // 收集該列的所有有效方塊（從上到下）
       const validTiles: Array<{ tile: TileType; originalRow: number }> = [];
+
       for (let row = 0; row < this.BOARD_SIZE; row++) {
         const tile = this.board[row]?.[col];
         if (tile !== undefined && tile >= 0) {
@@ -255,34 +257,42 @@ export class BoardManager {
         }
       }
 
-      // Clear entire column first
+      // 如果沒有空格，跳過這列
+      if (validTiles.length === this.BOARD_SIZE) {
+        continue;
+      }
+
+      // 清空整列
       for (let row = 0; row < this.BOARD_SIZE; row++) {
         if (this.board[row]) {
-          this.board[row]![col] = -1 as TileType; // Mark as empty
+          this.board[row]![col] = -1 as TileType;
         }
       }
 
-      // Place tiles from bottom up, maintaining their relative order
-      // Start from the bottom of the board and place tiles upward
-      for (let i = 0; i < validTiles.length; i++) {
-        const targetRow = this.BOARD_SIZE - 1 - i; // Place from bottom: 7, 6, 5, ...
-        const { tile, originalRow } = validTiles[validTiles.length - 1 - i]!; // Take from last to first
+      // 重新填充方塊：從底部開始，保持原有順序
+      // 關鍵：最下面的有效方塊應該放在最下面
+      const emptySpaces = this.BOARD_SIZE - validTiles.length;
 
-        // Ensure board row exists
+      for (let i = 0; i < validTiles.length; i++) {
+        // 從底部往上放置，但保持方塊的相對順序
+        const targetRow = emptySpaces + i;  // 先留出空格位置，然後依序放置
+        const { tile, originalRow } = validTiles[i]!;
+
+        // 確保行存在
         if (!this.board[targetRow]) {
           this.board[targetRow] = new Array(this.BOARD_SIZE).fill(-1);
         }
 
         this.board[targetRow]![col] = tile;
 
-        // Track movement for animation if tile moved
+        // 追蹤移動以用於動畫
         if (originalRow !== targetRow) {
           movements.set(`${originalRow},${col}`, { row: targetRow, col });
         }
       }
 
-      // Fill remaining empty spaces at the top with -1 to be filled later
-      for (let row = 0; row < this.BOARD_SIZE - validTiles.length; row++) {
+      // 頂部的空格保持為-1，等待補充新方塊
+      for (let row = 0; row < emptySpaces; row++) {
         if (!this.board[row]) {
           this.board[row] = new Array(this.BOARD_SIZE).fill(-1);
         }

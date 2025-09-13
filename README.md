@@ -1,26 +1,26 @@
-# 🎮 Match-3 Game
+# 🎮 三消遊戲 (Match-3 Game)
 
-A Phaser.js-powered Match-3 puzzle game with hardware-accelerated graphics designed for WebView environments (iOS/Android).
+基於 Phaser.js 引擎開發的三消益智遊戲，擁有硬體加速圖形，專為 WebView 環境（iOS/Android）設計。
 
-## ✨ Features
+## ✨ 遊戲特色
 
-### 🎯 Core Gameplay
-- **8x8 Grid**: Classic match-3 board with 5 colorful tile types
-- **Adjacent Swapping**: Click two adjacent tiles to swap them
-- **Match Detection**: 3+ consecutive tiles (horizontal/vertical) create matches
-- **Smart Validation**: Invalid swaps automatically revert with animation
+### 🎯 核心玩法
+- **8x8 棋盤**：經典三消遊戲棋盤，包含 5 種顏色的方塊
+- **相鄰交換**：點擊相鄰的兩個方塊來交換位置
+- **三消匹配**：3 個或以上連續方塊（水平/垂直）形成消除
+- **智能驗證**：無效交換會自動復原並播放動畫
 
-### 🎬 Animations & Visual Effects
-- **Hardware Acceleration**: Phaser.js powered 60fps smooth animations
-- **Particle Effects**: Beautiful visual feedback for tile clearing
-- **Cascade Mechanics**: Realistic physics for falling tiles with bounce effects
-- **Refill System**: New tiles spawn from above with smooth animations
-- **Multi-level Cascades**: Automatic chain reactions with multiplier bonuses
+### 🎬 動畫與視覺效果
+- **硬體加速**：Phaser.js 驅動的 60fps 流暢動畫
+- **粒子效果**：方塊消除時的精美視覺反饋
+- **連鎖機制**：擬真的方塊掉落物理效果，帶有彈跳效果
+- **補充系統**：新方塊從上方生成，擁有流暢的動畫
+- **多級連鎖**：自動連鎖反應，帶有倍數加分
 
-### 🏆 Scoring System
-- Base: **10 points** per cleared tile
-- Cascades: **1.5x multiplier** for each cascade level
-- Visual feedback with floating messages
+### 🏆 計分系統
+- 基礎：每個被消除的方塊得 **10 分**
+- 連鎖：每級連鎖有 **1.5 倍**加成
+- 浮動文字提供視覺反饋
 
 ## 🚀 Quick Start
 
