@@ -673,6 +673,12 @@ export class Match3Scene extends Phaser.Scene {
     try {
       const sessionId = logManager.getSessionId();
 
+      // Scan actual visual state before exporting
+      const visualState = this.scanVisualState();
+
+      // Log visual state for comparison
+      logManager.logDebug('VISUAL STATE SCAN - Current screen display', visualState);
+
       // Export .log file to server
       const logContent = logManager.getCurrentSessionLogs();
       await this.saveLogToServer(sessionId, logContent, 'log');
@@ -682,7 +688,8 @@ export class Match3Scene extends Phaser.Scene {
       await this.saveLogToServer(sessionId, jsonContent, 'json');
 
       console.log(`📁 Logs saved to server: ${sessionId}`);
-      this.updateStatus(`📁 Log files saved to /logs directory`);
+      console.log(`👁️  Visual state scan completed and added to logs`);
+      this.updateStatus(`📁 Log files saved with visual state scan`);
     } catch (error) {
       console.error('Failed to save logs to server:', error);
       this.updateStatus('❌ Failed to save logs to server');
@@ -745,12 +752,178 @@ export class Match3Scene extends Phaser.Scene {
 
           // If not tracked, it's an orphaned sprite
           if (!isTracked) {
-            console.warn(`🧹 Cleaning up orphaned sprite at (${sprite.x}, ${sprite.y})`);
+            const cleanupMsg = `🧹 Cleaning up orphaned sprite at (${sprite.x}, ${sprite.y})`;
+            console.warn(cleanupMsg);
+
+            // Log to file logger as well
+            logManager.logDebug('Orphaned sprite cleanup', {
+              position: { x: sprite.x, y: sprite.y },
+              message: cleanupMsg
+            });
+
             sprite.destroy();
           }
         }
       }
     });
+  }
+
+  /**
+   * Scan the actual visual state of the game board
+   * Returns what is actually displayed on screen vs what should be displayed
+   */
+  private scanVisualState(): any {
+    const boardState = this.boardManager.getBoard();
+    const visualState = {
+      timestamp: new Date().toISOString(),
+      logicalBoard: this.formatBoardForLog(boardState),
+      visualSprites: this.scanVisualSprites(),
+      spriteMismatch: [] as any[],
+      summary: {
+        totalLogicalTiles: 0,
+        totalVisualSprites: 0,
+        mismatches: 0,
+        orphanedSprites: 0
+      }
+    };
+
+    // Count logical tiles
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const logicalTile = boardState[row]?.[col];
+        if (logicalTile !== undefined && logicalTile >= 0) {
+          visualState.summary.totalLogicalTiles++;
+        }
+      }
+    }
+
+    // Compare logical vs visual
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const logicalTile = boardState[row]?.[col];
+        const visualSprite = visualState.visualSprites.grid[row]?.[col];
+
+        if (logicalTile !== undefined && logicalTile >= 0) {
+          // Should have a sprite here
+          if (!visualSprite || visualSprite.tileType !== logicalTile) {
+            visualState.spriteMismatch.push({
+              position: { row, col },
+              expected: this.getTileSymbol(logicalTile),
+              actual: visualSprite ? this.getTileSymbol(visualSprite.tileType) : '❌ MISSING',
+              issue: visualSprite ? 'WRONG_TYPE' : 'MISSING_SPRITE'
+            });
+            visualState.summary.mismatches++;
+          }
+        } else {
+          // Should NOT have a sprite here
+          if (visualSprite) {
+            visualState.spriteMismatch.push({
+              position: { row, col },
+              expected: '⚫ EMPTY',
+              actual: this.getTileSymbol(visualSprite.tileType),
+              issue: 'UNEXPECTED_SPRITE'
+            });
+            visualState.summary.mismatches++;
+          }
+        }
+      }
+    }
+
+    visualState.summary.totalVisualSprites = visualState.visualSprites.totalSprites;
+    visualState.summary.orphanedSprites = visualState.visualSprites.orphanedSprites.length;
+
+    return visualState;
+  }
+
+  /**
+   * Scan all visual sprites currently on screen
+   */
+  private scanVisualSprites(): any {
+    const result = {
+      grid: Array(8).fill(null).map(() => Array(8).fill(null)),
+      orphanedSprites: [] as any[],
+      totalSprites: 0
+    };
+
+    // Check sprite array
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const sprite = this.tileSprites[row]?.[col];
+        if (sprite && (sprite as any).active !== false) {
+          result.grid[row]![col] = {
+            x: sprite.x,
+            y: sprite.y,
+            tileType: sprite.getData('tileType'),
+            alpha: (sprite as any).alpha || 1,
+            visible: (sprite as any).visible !== false
+          };
+          result.totalSprites++;
+        }
+      }
+    }
+
+    // Check for orphaned sprites in scene
+    const gameObjects = this.children.list;
+    gameObjects.forEach((obj: any) => {
+      if (obj instanceof Phaser.GameObjects.Sprite) {
+        const sprite = obj as Phaser.GameObjects.Sprite;
+
+        // Check if this sprite is in our tile area
+        const isInTileArea =
+          sprite.x >= this.BOARD_OFFSET_X &&
+          sprite.x <= this.BOARD_OFFSET_X + 8 * this.TILE_SIZE &&
+          sprite.y >= this.BOARD_OFFSET_Y &&
+          sprite.y <= this.BOARD_OFFSET_Y + 8 * this.TILE_SIZE;
+
+        if (isInTileArea) {
+          // Check if this sprite is properly tracked in our array
+          let isTracked = false;
+          for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+              if (this.tileSprites[row]?.[col] === sprite) {
+                isTracked = true;
+                break;
+              }
+            }
+            if (isTracked) break;
+          }
+
+          if (!isTracked) {
+            result.orphanedSprites.push({
+              x: sprite.x,
+              y: sprite.y,
+              alpha: (sprite as any).alpha || 1,
+              visible: (sprite as any).visible !== false,
+              tileType: sprite.getData('tileType') || 'UNKNOWN'
+            });
+          }
+        }
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * Format board state for logging (same as file logger)
+   */
+  private formatBoardForLog(board: any[][]): string {
+    let result = '   0 1 2 3 4 5 6 7\n';
+    board.forEach((row, rowIndex) => {
+      const rowStr = row.map(tile => this.getTileSymbol(tile)).join(' ');
+      result += `${rowIndex}: ${rowStr}\n`;
+    });
+    return result;
+  }
+
+  /**
+   * Get tile symbol for logging
+   */
+  private getTileSymbol(tileType: any): string {
+    const symbols = ['🔴', '🔵', '🟡', '🟢', '🟣'];
+    if (tileType === undefined) return '❓';
+    if (tileType < 0) return '⚫'; // Empty
+    return symbols[tileType] || '❓';
   }
 
 }

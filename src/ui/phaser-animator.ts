@@ -161,17 +161,31 @@ export class PhaserAnimator {
       const spritesToAnimate: Phaser.GameObjects.Sprite[] = [];
       const particleEmitters: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
 
-      // Create particle effects for each cleared tile
+      // Create temporary animation sprites and immediately destroy originals
       positions.forEach(pos => {
-        const sprite = tileSprites[pos.row]?.[pos.col];
-        if (sprite) {
-          spritesToAnimate.push(sprite);
+        const originalSprite = tileSprites[pos.row]?.[pos.col];
+        if (originalSprite) {
+          // Get sprite properties before destroying
+          const x = originalSprite.x;
+          const y = originalSprite.y;
+          const tileType = originalSprite.getData('tileType');
+
+          // IMMEDIATELY destroy original sprite and clear from array
+          originalSprite.destroy();
+          tileSprites[pos.row]![pos.col] = null as any;
+
+          // Create temporary sprite for animation only
+          const tempSprite = this.scene.add.sprite(x, y, `tile_${tileType}`)
+            .setAlpha(1)
+            .setScale(1);
+
+          spritesToAnimate.push(tempSprite);
 
           // Create particle burst
-          const particles = this.scene.add.particles(sprite.x, sprite.y, 'particle', {
+          const particles = this.scene.add.particles(x, y, 'particle', {
             speed: { min: 50, max: 150 },
             scale: { start: 0.3, end: 0 },
-            tint: this.getTileColor(sprite.getData('tileType')),
+            tint: this.getTileColor(tileType),
             lifespan: 600,
             quantity: 8,
             blendMode: 'ADD'
@@ -179,11 +193,6 @@ export class PhaserAnimator {
 
           particleEmitters.push(particles);
         }
-      });
-
-      // Immediately remove sprites from array to prevent visual artifacts
-      positions.forEach(pos => {
-        tileSprites[pos.row]![pos.col] = null as any;
       });
 
       // Animate tiles disappearing
@@ -198,7 +207,7 @@ export class PhaserAnimator {
           // Clean up particle emitters
           particleEmitters.forEach(emitter => emitter.destroy());
 
-          // Destroy the animated sprites
+          // Destroy the temporary animation sprites
           spritesToAnimate.forEach(sprite => sprite.destroy());
 
           resolve();
@@ -213,9 +222,13 @@ export class PhaserAnimator {
   async animateFallingTiles(movements: Map<string, Position>, tileSprites: Phaser.GameObjects.Sprite[][]): Promise<void> {
     if (movements.size === 0) return Promise.resolve();
 
+    // Log detailed falling animation start
+    this.logFallingAnimationStart(movements, tileSprites);
+
     return new Promise((resolve) => {
       const animationsToComplete = movements.size;
       let completedAnimations = 0;
+      const completionLog: any[] = [];
 
       movements.forEach((newPos, oldPosKey) => {
         const [oldRow, oldCol] = oldPosKey.split(',').map(Number) as [number, number];
@@ -236,16 +249,61 @@ export class PhaserAnimator {
             duration: duration,
             ease: 'Bounce.easeOut',
             onComplete: () => {
+              const startTime = Date.now();
+
               // Update sprite data
               sprite.setData('row', newPos.row);
               sprite.setData('col', newPos.col);
 
-              // Clear old position in sprite array and update new position
-              tileSprites[oldRow!]![oldCol!] = null as any; // Clear old position
-              tileSprites[newPos.row]![newPos.col] = sprite; // Set new position
+              // Clear old position in sprite array
+              const oldSprite = tileSprites[oldRow!]![oldCol!];
+              tileSprites[oldRow!]![oldCol!] = null as any;
+
+              // Check if target position is empty before setting
+              const targetSprite = tileSprites[newPos.row]![newPos.col];
+              let animationResult = 'SUCCESS';
+              let issue = '';
+
+              if (targetSprite === null || targetSprite === undefined) {
+                tileSprites[newPos.row]![newPos.col] = sprite;
+              } else {
+                // Target position already occupied
+                animationResult = 'DUPLICATE_DETECTED';
+                issue = `Target (${newPos.row},${newPos.col}) already occupied by sprite`;
+
+                const warningMsg = `🚨 Duplicate sprite detected at (${newPos.row},${newPos.col}), destroying duplicate`;
+                console.warn(warningMsg);
+
+                // Log to file logger as well
+                if (typeof window !== 'undefined' && (window as any).logManager) {
+                  (window as any).logManager.logDebug('Duplicate sprite in falling animation', {
+                    targetPosition: { row: newPos.row, col: newPos.col },
+                    originalPosition: { row: oldRow!, col: oldCol! },
+                    message: warningMsg
+                  });
+                }
+
+                sprite.destroy();
+              }
+
+              // Log completion details
+              completionLog.push({
+                spriteId: sprite.getData('id') || `sprite_${oldRow}_${oldCol}`,
+                from: { row: oldRow!, col: oldCol! },
+                to: { row: newPos.row, col: newPos.col },
+                tileType: sprite.getData('tileType'),
+                oldSpriteWas: oldSprite === sprite ? 'SAME' : 'DIFFERENT',
+                targetWas: targetSprite ? 'OCCUPIED' : 'EMPTY',
+                result: animationResult,
+                issue: issue,
+                completionOrder: completedAnimations + 1,
+                completionTime: startTime
+              });
 
               completedAnimations++;
               if (completedAnimations === animationsToComplete) {
+                // Log completion summary
+                this.logFallingAnimationComplete(completionLog);
                 resolve();
               }
             }
@@ -407,5 +465,129 @@ export class PhaserAnimator {
    */
   stopAllAnimations(): void {
     this.scene.tweens.killAll();
+  }
+
+  /**
+   * Log detailed falling animation start information
+   */
+  private logFallingAnimationStart(movements: Map<string, Position>, tileSprites: Phaser.GameObjects.Sprite[][]): void {
+    const animationData = {
+      timestamp: new Date().toISOString(),
+      totalMovements: movements.size,
+      movements: [] as any[],
+      spriteArrayState: this.getSpriteArraySnapshot(tileSprites),
+      potentialIssues: [] as string[]
+    };
+
+    // Analyze each movement
+    movements.forEach((newPos, oldPosKey) => {
+      const [oldRow, oldCol] = oldPosKey.split(',').map(Number) as [number, number];
+      const sprite = tileSprites[oldRow!]?.[oldCol!];
+
+      const movement = {
+        from: { row: oldRow!, col: oldCol! },
+        to: { row: newPos.row, col: newPos.col },
+        distance: Math.abs(newPos.row - oldRow!),
+        spriteExists: !!sprite,
+        spriteType: sprite ? sprite.getData('tileType') : null,
+        spritePosition: sprite ? { x: sprite.x, y: sprite.y } : null,
+        targetCurrentlyOccupied: !!tileSprites[newPos.row]?.[newPos.col]
+      };
+
+      // Check for potential issues
+      if (!sprite) {
+        animationData.potentialIssues.push(`Missing sprite at source ${oldRow},${oldCol}`);
+      }
+
+      if (movement.targetCurrentlyOccupied) {
+        animationData.potentialIssues.push(`Target ${newPos.row},${newPos.col} already occupied`);
+      }
+
+      if (movement.distance === 0) {
+        animationData.potentialIssues.push(`Zero distance movement: ${oldRow},${oldCol}`);
+      }
+
+      animationData.movements.push(movement);
+    });
+
+    // Log to file logger
+    if (typeof window !== 'undefined' && (window as any).logManager) {
+      (window as any).logManager.logDebug('FALLING ANIMATION START - Detailed movement analysis', animationData);
+    }
+
+    console.log('🎬 Falling animation start:', animationData);
+  }
+
+  /**
+   * Log detailed falling animation completion information
+   */
+  private logFallingAnimationComplete(completionLog: any[]): void {
+    const completionData = {
+      timestamp: new Date().toISOString(),
+      totalCompletions: completionLog.length,
+      successfulAnimations: completionLog.filter(c => c.result === 'SUCCESS').length,
+      duplicateDetections: completionLog.filter(c => c.result === 'DUPLICATE_DETECTED').length,
+      completionOrder: completionLog.sort((a, b) => a.completionOrder - b.completionOrder),
+      issues: completionLog.filter(c => c.issue).map(c => c.issue),
+      summary: {
+        allSuccessful: completionLog.every(c => c.result === 'SUCCESS'),
+        hasDuplicates: completionLog.some(c => c.result === 'DUPLICATE_DETECTED'),
+        hasIssues: completionLog.some(c => c.issue)
+      }
+    };
+
+    // Analyze completion patterns
+    const timeSpread = {
+      first: Math.min(...completionLog.map(c => c.completionTime)),
+      last: Math.max(...completionLog.map(c => c.completionTime)),
+      spread: Math.max(...completionLog.map(c => c.completionTime)) - Math.min(...completionLog.map(c => c.completionTime))
+    };
+
+    completionData.summary = { ...completionData.summary, ...timeSpread };
+
+    // Log to file logger
+    if (typeof window !== 'undefined' && (window as any).logManager) {
+      (window as any).logManager.logDebug('FALLING ANIMATION COMPLETE - Detailed completion analysis', completionData);
+    }
+
+    console.log('🏁 Falling animation complete:', completionData);
+  }
+
+  /**
+   * Get a snapshot of current sprite array state
+   */
+  private getSpriteArraySnapshot(tileSprites: Phaser.GameObjects.Sprite[][]): any {
+    const snapshot = {
+      totalSprites: 0,
+      grid: [] as any[],
+      emptyCells: 0,
+      nullCells: 0
+    };
+
+    for (let row = 0; row < 8; row++) {
+      const rowData = [];
+      for (let col = 0; col < 8; col++) {
+        const sprite = tileSprites[row]?.[col];
+
+        if (sprite === null) {
+          rowData.push(null);
+          snapshot.nullCells++;
+        } else if (sprite === undefined) {
+          rowData.push(undefined);
+          snapshot.emptyCells++;
+        } else {
+          rowData.push({
+            type: sprite.getData('tileType'),
+            x: sprite.x,
+            y: sprite.y,
+            alpha: (sprite as any).alpha || 1
+          });
+          snapshot.totalSprites++;
+        }
+      }
+      snapshot.grid.push(rowData);
+    }
+
+    return snapshot;
   }
 }
