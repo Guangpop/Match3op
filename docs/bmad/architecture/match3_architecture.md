@@ -1,8 +1,8 @@
 # Match-3 Game Architecture Document
 
 ## 🏗 System Overview
-The game is implemented as a web-based application that runs inside a WebView using **Phaser.js 3.80** game engine. 
-It uses TypeScript for type-safe game logic and Phaser.js for hardware-accelerated WebGL/Canvas rendering with particle effects.
+The game will be implemented as a web-based application that runs inside a WebView using **Phaser.js 3.80** game engine. 
+It will use TypeScript for type-safe game logic and Phaser.js for hardware-accelerated WebGL/Canvas rendering with particle effects.
 
 ---
 

@@ -1,7 +1,7 @@
 # Match-3 Game Product Requirements Document (PRD)
 
 ## 🎯 Project Overview
-We have built a professional Match-3 puzzle game powered by **Phaser.js 3.80** game engine. The game runs smoothly in WebView environments with hardware-accelerated graphics, particle effects, and 60fps animations.
+This document defines requirements for a professional Match-3 puzzle game to be built using **Phaser.js 3.80** game engine. The game will run smoothly in WebView environments with hardware-accelerated graphics, particle effects, and 60fps animations.
 
 ---
 
@@ -65,6 +65,86 @@ We have built a professional Match-3 puzzle game powered by **Phaser.js 3.80** g
   - 建議封裝一層「手勢事件」來支援點擊 / 拖曳。
 - **離線資源**
   - 如果 WebView 要支援離線遊玩，可以考慮 Service Worker 或直接打包資源進 App。
+
+---
+
+---
+
+## 🎨 Visual & Audio Requirements
+
+### Visual Design
+- **Tile Graphics**: 5 distinct, colorful tile sprites (red, blue, green, yellow, purple)
+- **Board Design**: Clean 8x8 grid with clear cell boundaries
+- **Selection Feedback**: Visual highlight for selected tiles (border/glow effect)
+- **Particle Effects**: Burst animations when tiles are cleared with matching colors
+- **Animation Timing**: 300-400ms for swaps, 400-600ms for falling tiles
+- **Responsive Design**: Auto-scaling for different screen sizes and orientations
+
+### Audio (Future Phase)
+- Sound effects for tile swaps, matches, cascades
+- Background music for ambient gameplay
+- Audio feedback for invalid moves
+
+---
+
+## 🎯 User Interface Requirements
+
+### Game Screen Elements
+- **Game Board**: Central 8x8 tile grid
+- **Score Display**: Current score with real-time updates
+- **Status Messages**: Feedback for player actions ("Invalid swap", "Great cascade!")
+- **Touch-Friendly**: Minimum 44px touch targets for mobile accessibility
+
+### Input Handling
+- **Primary Input**: Touch/click to select tiles
+- **Secondary Input**: Touch/click adjacent tile to attempt swap
+- **Visual Feedback**: Immediate response to user interactions
+- **Error Prevention**: Clear invalid move feedback
+
+---
+
+## ⚙️ Technical Implementation Requirements
+
+### Architecture
+- **Separation of Concerns**: Core game logic separate from rendering
+- **Module Structure**:
+  - Board management (grid state, tile positioning)
+  - Match detection engine (pattern recognition)
+  - Cascade system (physics, gravity simulation)
+  - Animation controller (Phaser.js integration)
+  - Score calculator (base points + multipliers)
+
+### Performance Standards
+- **Frame Rate**: Consistent 60 FPS on target devices
+- **Load Time**: Initial game load under 3 seconds
+- **Memory Usage**: Efficient sprite management and cleanup
+- **Battery Optimization**: GPU acceleration without excessive power draw
+
+### Quality Assurance
+- **Initial Board**: No pre-existing matches at game start
+- **Game State Validation**: Consistent state between logic and visuals
+- **Input Validation**: Prevent invalid operations during animations
+- **Edge Cases**: Handle board corners and sides correctly
+
+---
+
+## 🧪 Testing Requirements
+
+### Unit Testing
+- Board initialization and tile placement
+- Match detection algorithms (horizontal/vertical patterns)
+- Score calculation with cascade multipliers
+- Cascade physics and tile falling logic
+
+### Integration Testing  
+- Game flow from swap to cascade completion
+- Animation synchronization with game state
+- Touch/mouse input handling across devices
+
+### Performance Testing
+- Frame rate consistency during complex cascades
+- Memory leak detection during extended play
+- WebView compatibility across iOS/Android versions
 
 ---
 
