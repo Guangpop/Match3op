@@ -13,10 +13,8 @@ This is a **completed Match-3 puzzle game** powered by **Phaser.js 3.80** game e
 - ALWAYS use the existing complete Phaser.js architecture components
 - If something needs fixing, fix the existing architecture, don't create workarounds
 
-## Key Documents
-- **PRD**: `docs/bmad/prd/match3_prd.md` - Product requirements and game mechanics
-- **Architecture**: `docs/bmad/architecture/match3_architecture.md` - Technical architecture and module structure
-- **User Stories**: `docs/bmad/stories/` - Feature requirements in story format
+## Project Structure
+This is a self-contained Match-3 puzzle game with all necessary components included in the codebase.
 
 ## Implemented Architecture ✅ COMPLETED
 The codebase follows a clean modular structure:
@@ -33,7 +31,7 @@ The codebase follows a clean modular structure:
 - **Performance**: Consistent 60 FPS with GPU acceleration
 
 ## Development Workflow ✅ COMPLETED
-The project uses BMAD (https://github.com/bmad-code-org/BMAD-METHOD) methodology. Implementation follows:
+The project follows modern TypeScript development practices. Implementation includes:
 - ✅ **Clean Architecture**: Core game logic completely separated from Phaser.js rendering
 - ✅ **WebView Excellence**: Optimized for iOS/Android with hardware acceleration
 - ✅ **Professional Quality**: Production-ready with particle effects and smooth animations

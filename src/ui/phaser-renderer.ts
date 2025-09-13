@@ -428,8 +428,7 @@ export class Match3Scene extends Phaser.Scene {
 
       this.updateStatus(`Cascade level ${cascadeLevel}! +${cascadeScore} points`);
 
-      // Track positions before clearing for falling tile logging
-      const boardBeforeClearing = this.boardManager.getBoard();
+      // Remove unused variable - board state tracked after clearing
 
       // Animate tile clearing with particles
       await this.animator.animateTileClearing(matchResult.clearedPositions, this.tileSprites);
@@ -449,7 +448,7 @@ export class Match3Scene extends Phaser.Scene {
       const fallingTiles = Array.from(movements.entries()).map(([key, toPos]) => {
         const [fromRow, fromCol] = key.split(',').map(Number);
         const fromPos = { row: fromRow!, col: fromCol! };
-        const tileType = boardBeforeClearing[fromPos.row]![fromPos.col]!;
+        const tileType = boardBeforeGravity[fromPos.row]![fromPos.col]!;
         return { from: fromPos, to: toPos, tileType };
       });
 

@@ -132,11 +132,11 @@ This project was built following user stories:
 
 Each story includes comprehensive tests and documentation.
 
-## 📚 Documentation
+## 📚 Project Structure
 
-- **PRD**: `docs/bmad/prd/match3_prd.md` - Product requirements
-- **Architecture**: `docs/bmad/architecture/match3_architecture.md` - Technical design
-- **User Stories**: `docs/bmad/stories/` - Feature specifications
+- **Core Logic**: `src/core/` - Game mechanics and board management
+- **UI Components**: `src/ui/` - Phaser.js rendering and animations
+- **Tests**: `tests/` - Comprehensive unit tests
 
 ## 🧪 Testing
 
@@ -153,11 +153,10 @@ npm test story3
 ## 🔧 Development
 
 ### Adding New Features
-1. Update PRD with requirements
-2. Create user story in `docs/bmad/stories/`
-3. Implement core logic in `src/core/`
-4. Add animations in `src/ui/`
-5. Write tests in `tests/`
+1. Implement core logic in `src/core/`
+2. Add animations in `src/ui/`
+3. Write tests in `tests/`
+4. Update documentation as needed
 
 ### Architecture Guidelines
 - Keep **game logic separate** from UI

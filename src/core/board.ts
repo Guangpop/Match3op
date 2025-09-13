@@ -246,12 +246,12 @@ export class BoardManager {
     const movements = new Map<string, Position>();
 
     for (let col = 0; col < this.BOARD_SIZE; col++) {
-      // Collect non-empty tiles with their original positions (from bottom to top)
-      const tilesWithPositions: Array<{ tile: TileType; originalRow: number }> = [];
-      for (let row = this.BOARD_SIZE - 1; row >= 0; row--) {
+      // Collect non-empty tiles from top to bottom, preserving order
+      const validTiles: Array<{ tile: TileType; originalRow: number }> = [];
+      for (let row = 0; row < this.BOARD_SIZE; row++) {
         const tile = this.board[row]?.[col];
         if (tile !== undefined && tile >= 0) {
-          tilesWithPositions.push({ tile, originalRow: row });
+          validTiles.push({ tile, originalRow: row });
         }
       }
 
@@ -262,26 +262,26 @@ export class BoardManager {
         }
       }
 
-      // Place existing tiles at bottom (maintaining order from bottom)
-      for (let i = 0; i < tilesWithPositions.length; i++) {
-        const newRow = this.BOARD_SIZE - 1 - i;
-        const { tile, originalRow } = tilesWithPositions[i]!;
-        
+      // Place tiles from bottom up, maintaining their relative order
+      for (let i = 0; i < validTiles.length; i++) {
+        const targetRow = this.BOARD_SIZE - validTiles.length + i;
+        const { tile, originalRow } = validTiles[i]!;
+
         // Ensure board row exists
-        if (!this.board[newRow]) {
-          this.board[newRow] = new Array(this.BOARD_SIZE).fill(-1);
+        if (!this.board[targetRow]) {
+          this.board[targetRow] = new Array(this.BOARD_SIZE).fill(-1);
         }
-        
-        this.board[newRow]![col] = tile;
-        
+
+        this.board[targetRow]![col] = tile;
+
         // Track movement for animation if tile moved
-        if (originalRow !== newRow) {
-          movements.set(`${originalRow},${col}`, { row: newRow, col });
+        if (originalRow !== targetRow) {
+          movements.set(`${originalRow},${col}`, { row: targetRow, col });
         }
       }
-      
+
       // Fill remaining empty spaces at the top with -1 to be filled later
-      for (let row = 0; row < this.BOARD_SIZE - tilesWithPositions.length; row++) {
+      for (let row = 0; row < this.BOARD_SIZE - validTiles.length; row++) {
         if (!this.board[row]) {
           this.board[row] = new Array(this.BOARD_SIZE).fill(-1);
         }
