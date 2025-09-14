@@ -482,11 +482,11 @@ export class PhaserAnimator {
    */
   private getTileColor(tileType: TileType): number {
     const colors = [
-      0xFF6B6B, // Red
-      0x4ECDC4, // Cyan
-      0x45B7D1, // Blue
-      0xF7DC6F, // Yellow
-      0xBB8FCE  // Purple
+      0xFF3333, // Fire Red
+      0x3366FF, // Water Blue
+      0x33CC33, // Wood Green
+      0xFFCC00, // Light Gold
+      0x9933CC  // Dark Purple
     ];
     return colors[tileType] || 0xFFFFFF;
   }
