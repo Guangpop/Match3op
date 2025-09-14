@@ -6,14 +6,18 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build:prod": "npm run clean && tsc && npm run copy:assets",
     "dev": "tsc --watch",
     "serve": "http-server dist -p 8080 -c-1",
+    "serve:prod": "http-server dist -p 3002 -c-1",
     "server": "node server.js",
     "demo": "node dist/index.js",
     "test": "jest",
     "test:interactive": "npm run build && node dist/test.js",
     "test:watch": "jest --watch",
     "clean": "rm -rf dist",
+    "copy:assets": "cp -r assets dist/ || true",
+    "deploy:prepare": "npm run build:prod",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts"
   },

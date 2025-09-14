@@ -10,6 +10,7 @@ import { PhaserAnimator } from './phaser-animator.js';
 import { CascadeEvent } from '../core/game-logger.js';
 import { logManager } from '../core/log-manager.js';
 import { getAllTileColors, TILE_VISUAL_CONFIG, BOARD_CONFIG } from '../data/tile-data.js';
+import { ENV, logEnvironmentInfo } from '../config/environment.js';
 
 export class Match3Scene extends Phaser.Scene {
   private boardManager!: BoardManager;
@@ -62,9 +63,10 @@ export class Match3Scene extends Phaser.Scene {
     
     // Debug: Test logging system
     console.log('🎮 Game Scene: Testing logging system...');
-    logManager.logDebug('Game scene initialized', { 
+    logEnvironmentInfo();
+    logManager.logDebug('Game scene initialized', {
       timestamp: new Date().toISOString(),
-      boardSize: this.BOARD_SIZE 
+      boardSize: this.BOARD_SIZE
     });
     
     // Create UI
@@ -217,15 +219,17 @@ export class Match3Scene extends Phaser.Scene {
       .on('pointerover', () => resetBtn.setStyle({ backgroundColor: '#C0392B' }))
       .on('pointerout', () => resetBtn.setStyle({ backgroundColor: '#E74C3C' }));
 
-    // Export logs button
-    const exportBtn = this.add.text(this.BOARD_OFFSET_X + 320, buttonY, '📁 Export', {
-      ...buttonStyle,
-      backgroundColor: '#9B59B6'
-    })
-      .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.exportGameLogs())
-      .on('pointerover', () => exportBtn.setStyle({ backgroundColor: '#8E44AD' }))
-      .on('pointerout', () => exportBtn.setStyle({ backgroundColor: '#9B59B6' }));
+    // Export logs button (only in development)
+    if (ENV.enableExport) {
+      const exportBtn = this.add.text(this.BOARD_OFFSET_X + 320, buttonY, '📁 Export', {
+        ...buttonStyle,
+        backgroundColor: '#9B59B6'
+      })
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => this.exportGameLogs())
+        .on('pointerover', () => exportBtn.setStyle({ backgroundColor: '#8E44AD' }))
+        .on('pointerout', () => exportBtn.setStyle({ backgroundColor: '#9B59B6' }));
+    }
   }
 
   private createBoard(): void {
@@ -671,6 +675,15 @@ export class Match3Scene extends Phaser.Scene {
   }
 
   public async exportGameLogs(): Promise<void> {
+    // Only export to server if server features are enabled
+    if (!ENV.enableServerFeatures) {
+      console.log('📁 Export functionality disabled in production environment');
+      // Still allow client-side export in browser
+      logManager.exportLogsAsFile();
+      this.updateStatus('📁 Logs exported to browser download');
+      return;
+    }
+
     try {
       const sessionId = logManager.getSessionId();
 

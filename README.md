@@ -22,10 +22,16 @@
 - 連鎖：每級連鎖有 **1.5 倍**加成
 - 浮動文字提供視覺反饋
 
-## 🚀 Quick Start
+## 🚀 Live Demo
+
+**[https://your-username.github.io/match3op](https://your-username.github.io/match3op)**
+
+部署在 GitHub Pages 上的線上版本，包含完整遊戲功能和視覺效果。
+
+## 🛠️ Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation & Running
@@ -34,11 +40,24 @@
 # Install dependencies
 npm install
 
+# Build TypeScript
+npm run build
+
 # Start development server
 npm run serve
 
 # Open browser and navigate to:
 # http://127.0.0.1:8080
+```
+
+### Production Build
+
+```bash
+# Build for production (GitHub Pages ready)
+npm run build:prod
+
+# Serve production build locally
+npm run serve:prod
 ```
 
 ### Development Commands
@@ -162,6 +181,35 @@ npm test story3
 - Use **async/await** for animations
 - Follow **TypeScript strict** mode
 - Write **unit tests** for all mechanics
+
+## 🌐 GitHub Pages 部署
+
+### 自動部署 (推薦)
+
+1. **Fork 或 Clone** 此專案到你的 GitHub 帳號
+2. **啟用 GitHub Pages**:
+   - 前往 Repository Settings → Pages
+   - Source 選擇 "GitHub Actions"
+3. **設定權限**:
+   - Settings → Actions → General
+   - Workflow permissions → "Read and write permissions"
+4. **推送程式碼**到 main/master branch
+5. GitHub Action 會自動構建並部署到 `https://your-username.github.io/match3op`
+
+### 手動部署
+
+```bash
+# 構建生產版本
+npm run build:prod
+
+# 將 dist/ 目錄內容部署到 gh-pages branch
+# (使用你偏好的部署方法)
+```
+
+### 環境特性
+
+- **生產環境** (GitHub Pages): 自動隱藏 Export 功能，純前端運行
+- **開發環境** (Local): 完整功能，包含伺服器端 Export 和日誌功能
 
 ## 🤝 Contributing
 

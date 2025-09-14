@@ -1,6 +1,10 @@
+# Build outputs (GitHub Actions will build automatically)
 dist/
 node_modules/
 logs/
+
+# Don't ignore GitHub Actions workflow
+!.github/
 
 # macOS
 .DS_Store
