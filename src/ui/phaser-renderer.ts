@@ -311,7 +311,11 @@ export class Match3Scene extends Phaser.Scene {
 
   private async attemptSwap(pos1: Position, pos2: Position): Promise<void> {
     if (!this.boardManager.areAdjacent(pos1, pos2)) {
-      this.updateStatus('Tiles must be adjacent to swap!');
+      // Non-adjacent tile clicked - treat as new selection
+      this.deselectTile();
+      const newSprite = this.tileSprites[pos2.row]![pos2.col]!;
+      this.selectTile(pos2.row, pos2.col, newSprite);
+      this.updateStatus(`Tile selected at (${pos2.row}, ${pos2.col}). Click an adjacent tile to swap.`);
       return;
     }
 
@@ -319,12 +323,11 @@ export class Match3Scene extends Phaser.Scene {
     const matches = this.matchEngine.previewSwapMatches(boardStateBefore, pos1, pos2);
 
     if (!matches) {
-      this.updateStatus('Swap would not create any matches!');
-      // Animate invalid swap (shake and return)
-      await this.animator.animateInvalidSwap(
-        this.tileSprites[pos1.row]![pos1.col]!,
-        this.tileSprites[pos2.row]![pos2.col]!
-      );
+      // Invalid swap - treat as new selection
+      this.deselectTile();
+      const newSprite = this.tileSprites[pos2.row]![pos2.col]!;
+      this.selectTile(pos2.row, pos2.col, newSprite);
+      this.updateStatus(`Tile selected at (${pos2.row}, ${pos2.col}). Click an adjacent tile to swap.`);
       return;
     }
 
