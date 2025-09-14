@@ -222,7 +222,7 @@ export class PhaserAnimator {
   /**
    * Animate tiles falling due to gravity
    */
-  async animateFallingTiles(movements: Map<string, Position>, tileSprites: Phaser.GameObjects.Sprite[][]): Promise<void> {
+  async animateFallingTiles(movements: Map<string, Position>, tileSprites: Phaser.GameObjects.Sprite[][], boardAfterGravity: TileType[][]): Promise<void> {
     if (movements.size === 0) return Promise.resolve();
 
     // Log detailed falling animation start
@@ -266,9 +266,24 @@ export class PhaserAnimator {
             onComplete: () => {
               const startTime = Date.now();
 
-              // Update sprite data
+              // Update sprite data including correct tileType from board state
+              const correctTileType = boardAfterGravity[newPos.row]![newPos.col];
+              const oldTileType = sprite.getData('tileType');
+
               sprite.setData('row', newPos.row);
               sprite.setData('col', newPos.col);
+              sprite.setData('tileType', correctTileType);
+
+              // Log EVERY sprite type update for debugging - not just changes
+              const debugMsg = `🎯 Sprite type update at (${newPos.row},${newPos.col}): ${oldTileType} → ${correctTileType}${oldTileType === correctTileType ? ' (no change)' : ' (CHANGED)'}`;
+              console.log(debugMsg);
+              this.logManager.logDebug('Sprite type update during falling animation', {
+                position: { row: newPos.row, col: newPos.col },
+                oldType: oldTileType,
+                newType: correctTileType,
+                isChange: oldTileType !== correctTileType,
+                message: debugMsg
+              });
 
               // Original position was already cleared during pre-processing
               // Check if target position is empty before setting
@@ -343,18 +358,31 @@ export class PhaserAnimator {
           // Only create sprite if we have a valid tile type
           if (expectedType !== undefined && expectedType >= 0) {
             // If sprite doesn't exist or type changed, create new one
-            if (!currentSprite || currentSprite.getData('tileType') !== expectedType) {
-              if (currentSprite) {
-                currentSprite.destroy();
-              }
-
+            if (!currentSprite) {
+              // No sprite exists, create new one
               const newSprite = this.createNewTileSprite(row, col, expectedType);
               tileSprites[row]![col] = newSprite;
 
               // Animate spawn
               const spawnPromise = this.animateTileSpawn(newSprite, row);
               spawnPromises.push(spawnPromise);
+            } else if (currentSprite.getData('tileType') !== expectedType) {
+              // Type mismatch - UPDATE existing sprite instead of destroying it
+              const warningMsg = `🔧 Sprite type sync at (${row},${col}): ${currentSprite.getData('tileType')} → ${expectedType}, updating in-place`;
+              console.log(warningMsg);
+
+              this.logManager.logDebug('Sprite type synchronized in spawn phase', {
+                position: { row, col },
+                oldType: currentSprite.getData('tileType'),
+                newType: expectedType,
+                message: warningMsg
+              });
+
+              // Update sprite data and texture without destroying/recreating
+              currentSprite.setData('tileType', expectedType);
+              (currentSprite as any).setTexture(`tile_${expectedType}`);
             }
+            // If sprite exists and type matches, do nothing (keep existing sprite)
           } else {
             // No valid tile, remove sprite if it exists
             if (currentSprite) {

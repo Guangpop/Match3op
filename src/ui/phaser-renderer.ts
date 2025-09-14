@@ -453,7 +453,7 @@ export class Match3Scene extends Phaser.Scene {
         return { from: fromPos, to: toPos, tileType };
       });
 
-      await this.animator.animateFallingTiles(movements, this.tileSprites);
+      await this.animator.animateFallingTiles(movements, this.tileSprites, boardAfterGravity);
 
       // Track board state before refill
       const boardBeforeRefill = JSON.parse(JSON.stringify(this.boardManager.getBoard()));
