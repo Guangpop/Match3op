@@ -374,7 +374,25 @@ export class Match3Scene extends Phaser.Scene {
     logManager.printGameStats();
 
     this.isAnimating = false;
+
+    // Ensure all sprites are in normal visual state after swap completion
+    this.clearAllVisualEffects();
+
     this.updateStatus('Swap completed! Look for your next move.');
+  }
+
+  private clearAllVisualEffects(): void {
+    // Clear any lingering visual effects from all sprites
+    for (let row = 0; row < this.BOARD_SIZE; row++) {
+      for (let col = 0; col < this.BOARD_SIZE; col++) {
+        const sprite = this.tileSprites[row]?.[col];
+        if (sprite) {
+          sprite.clearTint();
+          sprite.setScale(1.0);
+          sprite.setAlpha(1.0);
+        }
+      }
+    }
   }
 
   /*

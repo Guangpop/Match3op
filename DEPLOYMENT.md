@@ -8,7 +8,7 @@
 - [x] **環境檢測系統** (`src/config/environment.ts`)
 - [x] **生產環境優化** (Export 功能自動隱藏)
 - [x] **TypeScript 建構設定** (自動編譯到 `dist/`)
-- [x] **統一珠子資料結構** (龍族拼圖配色方案)
+- [x] **統一珠子資料結構**
 - [x] **Package.json 部署腳本** (`build:prod`, `serve:prod`)
 
 ### 🔧 環境特性

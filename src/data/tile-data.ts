@@ -15,8 +15,7 @@ export interface TileConfig {
 }
 
 /**
- * 龍族拼圖風格的五色珠子配置
- * Puzzle & Dragons style five-color tile configuration
+ * five-color tile configuration
  */
 export const TILE_CONFIGS: Record<TileType, TileConfig> = {
   [TileType.RED]: {
