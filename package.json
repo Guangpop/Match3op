@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "build:prod": "npm run clean && tsc && npm run copy:assets",
+    "build:prod": "npm run clean && tsc && npm run copy:assets && npm run copy:html",
     "dev": "tsc --watch",
     "serve": "http-server dist -p 8080 -c-1",
     "serve:prod": "http-server dist -p 3002 -c-1",
@@ -17,6 +17,7 @@
     "test:watch": "jest --watch",
     "clean": "rm -rf dist",
     "copy:assets": "cp -r assets dist/ || true",
+    "copy:html": "cp index.html dist/",
     "deploy:prepare": "npm run build:prod",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts"
