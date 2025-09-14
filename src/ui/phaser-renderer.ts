@@ -57,7 +57,7 @@ export class Match3Scene extends Phaser.Scene {
     // Initialize game logic
     this.boardManager = new BoardManager();
     this.matchEngine = new MatchEngine();
-    this.animator = new PhaserAnimator(this);
+    this.animator = new PhaserAnimator(this, logManager);
     
     // Debug: Test logging system
     console.log('🎮 Game Scene: Testing logging system...');

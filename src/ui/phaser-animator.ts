@@ -5,15 +5,18 @@
 
 // Phaser is loaded globally from CDN in HTML
 import { Position, TileType } from '../core/board.js';
+import { LogManager } from '../core/log-manager.js';
 
 export class PhaserAnimator {
   private scene: Phaser.Scene;
+  private logManager: LogManager;
   private readonly TILE_SIZE = 64;
   private readonly BOARD_OFFSET_X = 100;
   private readonly BOARD_OFFSET_Y = 150;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, logManager: LogManager) {
     this.scene = scene;
+    this.logManager = logManager;
   }
 
   /**
@@ -225,14 +228,26 @@ export class PhaserAnimator {
     // Log detailed falling animation start
     this.logFallingAnimationStart(movements, tileSprites);
 
+    // Pre-collect sprite references and clear original positions
+    const spriteMovements = new Map<string, { sprite: Phaser.GameObjects.Sprite, newPos: Position }>();
+    movements.forEach((newPos, oldPosKey) => {
+      const [oldRow, oldCol] = oldPosKey.split(',').map(Number) as [number, number];
+      const sprite = tileSprites[oldRow!]?.[oldCol!];
+
+      if (sprite) {
+        spriteMovements.set(oldPosKey, { sprite, newPos });
+        // Clear the original position to prevent duplicates
+        tileSprites[oldRow!]![oldCol!] = null as any;
+      }
+    });
+
     return new Promise((resolve) => {
-      const animationsToComplete = movements.size;
+      const animationsToComplete = spriteMovements.size;
       let completedAnimations = 0;
       const completionLog: any[] = [];
 
-      movements.forEach((newPos, oldPosKey) => {
+      spriteMovements.forEach(({ sprite, newPos }, oldPosKey) => {
         const [oldRow, oldCol] = oldPosKey.split(',').map(Number) as [number, number];
-        const sprite = tileSprites[oldRow!]?.[oldCol!];
 
         if (sprite) {
           const newX = this.BOARD_OFFSET_X + newPos.col * this.TILE_SIZE + this.TILE_SIZE / 2;
@@ -255,10 +270,7 @@ export class PhaserAnimator {
               sprite.setData('row', newPos.row);
               sprite.setData('col', newPos.col);
 
-              // Clear old position in sprite array
-              const oldSprite = tileSprites[oldRow!]![oldCol!];
-              tileSprites[oldRow!]![oldCol!] = null as any;
-
+              // Original position was already cleared during pre-processing
               // Check if target position is empty before setting
               const targetSprite = tileSprites[newPos.row]![newPos.col];
               let animationResult = 'SUCCESS';
@@ -275,13 +287,11 @@ export class PhaserAnimator {
                 console.warn(warningMsg);
 
                 // Log to file logger as well
-                if (typeof window !== 'undefined' && (window as any).logManager) {
-                  (window as any).logManager.logDebug('Duplicate sprite in falling animation', {
-                    targetPosition: { row: newPos.row, col: newPos.col },
-                    originalPosition: { row: oldRow!, col: oldCol! },
-                    message: warningMsg
-                  });
-                }
+                this.logManager.logDebug('Duplicate sprite in falling animation', {
+                  targetPosition: { row: newPos.row, col: newPos.col },
+                  originalPosition: { row: oldRow!, col: oldCol! },
+                  message: warningMsg
+                });
 
                 sprite.destroy();
               }
@@ -292,7 +302,7 @@ export class PhaserAnimator {
                 from: { row: oldRow!, col: oldCol! },
                 to: { row: newPos.row, col: newPos.col },
                 tileType: sprite.getData('tileType'),
-                oldSpriteWas: oldSprite === sprite ? 'SAME' : 'DIFFERENT',
+                oldSpriteWas: 'PRE_CLEARED', // Original position was cleared during pre-processing
                 targetWas: targetSprite ? 'OCCUPIED' : 'EMPTY',
                 result: animationResult,
                 issue: issue,
@@ -511,9 +521,7 @@ export class PhaserAnimator {
     });
 
     // Log to file logger
-    if (typeof window !== 'undefined' && (window as any).logManager) {
-      (window as any).logManager.logDebug('FALLING ANIMATION START - Detailed movement analysis', animationData);
-    }
+    this.logManager.logDebug('FALLING ANIMATION START - Detailed movement analysis', animationData);
 
     console.log('🎬 Falling animation start:', animationData);
   }
@@ -546,9 +554,7 @@ export class PhaserAnimator {
     completionData.summary = { ...completionData.summary, ...timeSpread };
 
     // Log to file logger
-    if (typeof window !== 'undefined' && (window as any).logManager) {
-      (window as any).logManager.logDebug('FALLING ANIMATION COMPLETE - Detailed completion analysis', completionData);
-    }
+    this.logManager.logDebug('FALLING ANIMATION COMPLETE - Detailed completion analysis', completionData);
 
     console.log('🏁 Falling animation complete:', completionData);
   }
