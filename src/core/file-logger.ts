@@ -5,6 +5,7 @@
 
 import { TileType, Position } from './board.js';
 import { CascadeEvent } from './game-logger.js';
+import { getTileEmoji } from '../data/tile-data.js';
 
 export class FileLogger {
   private sessionId: string;
@@ -160,14 +161,12 @@ ${this.formatBoard(boardAfter)}
   }
 
   private formatBoard(board: TileType[][]): string {
-    const symbols = ['🔴', '🔵', '🟡', '🟢', '🟣']; // Red, Blue, Yellow, Green, Purple
-    
     let result = '   0 1 2 3 4 5 6 7\n';
     board.forEach((row, rowIndex) => {
       const rowStr = row.map(tile => {
         if (tile === undefined) return '❓';
         if (tile < 0) return '⚫'; // Empty
-        return symbols[tile] || '❓';
+        return getTileEmoji(tile);
       }).join(' ');
       result += `${rowIndex}: ${rowStr}\n`;
     });
@@ -180,9 +179,8 @@ ${this.formatBoard(boardAfter)}
   }
 
   private getTileSymbol(tileType: TileType): string {
-    const symbols = ['🔴', '🔵', '🟡', '🟢', '🟣'];
     if (tileType < 0 || tileType === undefined) return '⚫';
-    return symbols[tileType] || '❓';
+    return getTileEmoji(tileType);
   }
 
   private writeToLog(content: string): void {

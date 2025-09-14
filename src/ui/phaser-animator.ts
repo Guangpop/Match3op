@@ -6,13 +6,14 @@
 // Phaser is loaded globally from CDN in HTML
 import { Position, TileType } from '../core/board.js';
 import { LogManager } from '../core/log-manager.js';
+import { getTileColor, TILE_VISUAL_CONFIG, BOARD_CONFIG } from '../data/tile-data.js';
 
 export class PhaserAnimator {
   private scene: Phaser.Scene;
   private logManager: LogManager;
-  private readonly TILE_SIZE = 64;
-  private readonly BOARD_OFFSET_X = 100;
-  private readonly BOARD_OFFSET_Y = 150;
+  private readonly TILE_SIZE = TILE_VISUAL_CONFIG.SIZE;
+  private readonly BOARD_OFFSET_X = BOARD_CONFIG.OFFSET_X;
+  private readonly BOARD_OFFSET_Y = BOARD_CONFIG.OFFSET_Y;
 
   constructor(scene: Phaser.Scene, logManager: LogManager) {
     this.scene = scene;
@@ -186,11 +187,11 @@ export class PhaserAnimator {
 
           // Create particle burst
           const particles = this.scene.add.particles(x, y, 'particle', {
-            speed: { min: 50, max: 150 },
-            scale: { start: 0.3, end: 0 },
+            speed: { min: TILE_VISUAL_CONFIG.PARTICLE_CONFIG.SPEED_MIN, max: TILE_VISUAL_CONFIG.PARTICLE_CONFIG.SPEED_MAX },
+            scale: { start: TILE_VISUAL_CONFIG.PARTICLE_CONFIG.SCALE_MIN, end: 0 },
             tint: this.getTileColor(tileType),
-            lifespan: 600,
-            quantity: 8,
+            lifespan: TILE_VISUAL_CONFIG.PARTICLE_CONFIG.LIFESPAN,
+            quantity: TILE_VISUAL_CONFIG.PARTICLE_CONFIG.QUANTITY,
             blendMode: 'ADD'
           });
 
@@ -415,7 +416,7 @@ export class PhaserAnimator {
       .setData('tileType', tileType);
 
     // Add hover effects
-    sprite.on('pointerover', () => sprite.setTint(0xCCCCCC));
+    sprite.on('pointerover', () => sprite.setTint(TILE_VISUAL_CONFIG.HOVER_TINT));
     sprite.on('pointerout', () => sprite.clearTint());
 
     return sprite;
@@ -481,14 +482,7 @@ export class PhaserAnimator {
    * Get color value for tile type (for particles)
    */
   private getTileColor(tileType: TileType): number {
-    const colors = [
-      0xFF3333, // Fire Red
-      0x3366FF, // Water Blue
-      0x33CC33, // Wood Green
-      0xFFCC00, // Light Gold
-      0x9933CC  // Dark Purple
-    ];
-    return colors[tileType] || 0xFFFFFF;
+    return getTileColor(tileType);
   }
 
   /**

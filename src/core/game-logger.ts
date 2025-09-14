@@ -4,6 +4,7 @@
  */
 
 import { TileType, Position } from './board.js';
+import { getTileEmoji } from '../data/tile-data.js';
 
 export interface MoveLog {
   timestamp: string;
@@ -133,10 +134,9 @@ export class GameLogger {
    */
   printBoard(board: TileType[][], title: string = "Board State"): void {
     console.log(`\n📋 ${title}:`);
-    const symbols = ['🔴', '🔵', '🟡', '🟢', '🟣']; // Red, Blue, Yellow, Green, Purple
-    
+
     board.forEach((row, rowIndex) => {
-      const rowStr = row.map(tile => symbols[tile] || '❓').join(' ');
+      const rowStr = row.map(tile => tile >= 0 ? getTileEmoji(tile) : '⚫').join(' ');
       console.log(`${rowIndex}: ${rowStr}`);
     });
     console.log('');

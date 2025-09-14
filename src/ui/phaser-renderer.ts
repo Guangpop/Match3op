@@ -9,6 +9,7 @@ import { MatchEngine } from '../core/match.js';
 import { PhaserAnimator } from './phaser-animator.js';
 import { CascadeEvent } from '../core/game-logger.js';
 import { logManager } from '../core/log-manager.js';
+import { getAllTileColors, TILE_VISUAL_CONFIG, BOARD_CONFIG } from '../data/tile-data.js';
 
 export class Match3Scene extends Phaser.Scene {
   private boardManager!: BoardManager;
@@ -31,10 +32,10 @@ export class Match3Scene extends Phaser.Scene {
   private validMovesText!: Phaser.GameObjects.Text;
   
   // Constants
-  private readonly BOARD_SIZE = 8;
-  private readonly TILE_SIZE = 64;
-  private readonly BOARD_OFFSET_X = 100;
-  private readonly BOARD_OFFSET_Y = 150;
+  private readonly BOARD_SIZE = BOARD_CONFIG.SIZE;
+  private readonly TILE_SIZE = TILE_VISUAL_CONFIG.SIZE;
+  private readonly BOARD_OFFSET_X = BOARD_CONFIG.OFFSET_X;
+  private readonly BOARD_OFFSET_Y = BOARD_CONFIG.OFFSET_Y;
   
   constructor() {
     super({ key: 'Match3Scene' });
@@ -81,18 +82,18 @@ export class Match3Scene extends Phaser.Scene {
   }
 
   private createTileTextures(): void {
-    const colors = [
-      0xFF3333, // Fire Red
-      0x3366FF, // Water Blue
-      0x33CC33, // Wood Green
-      0xFFCC00, // Light Gold
-      0x9933CC  // Dark Purple
-    ];
+    const colors = getAllTileColors();
 
     colors.forEach((color, index) => {
       const graphics = this.add.graphics();
       graphics.fillStyle(color);
-      graphics.fillRoundedRect(0, 0, this.TILE_SIZE - 4, this.TILE_SIZE - 4, 8);
+      graphics.fillRoundedRect(
+        0,
+        0,
+        this.TILE_SIZE - TILE_VISUAL_CONFIG.BORDER_WIDTH,
+        this.TILE_SIZE - TILE_VISUAL_CONFIG.BORDER_WIDTH,
+        TILE_VISUAL_CONFIG.BORDER_RADIUS
+      );
       graphics.generateTexture(`tile_${index}`, this.TILE_SIZE, this.TILE_SIZE);
       graphics.destroy();
     });
@@ -255,7 +256,7 @@ export class Match3Scene extends Phaser.Scene {
     // Add hover effect
     sprite.on('pointerover', () => {
       if (!this.isAnimating) {
-        sprite.setTint(0xCCCCCC);
+        sprite.setTint(TILE_VISUAL_CONFIG.HOVER_TINT);
       }
     });
 
@@ -291,7 +292,7 @@ export class Match3Scene extends Phaser.Scene {
   private selectTile(row: number, col: number, sprite: Phaser.GameObjects.Sprite): void {
     this.selectedTile = { row, col };
     this.selectedSprite = sprite;
-    sprite.setTint(0xFFD700); // Gold tint for selection
+    sprite.setTint(TILE_VISUAL_CONFIG.SELECT_TINT); // Gold tint for selection
     sprite.setScale(1.1);
   }
 
