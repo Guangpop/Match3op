@@ -15,7 +15,43 @@ export class FileLogger {
   constructor() {
     this.sessionId = new Date().toISOString().replace(/[:.]/g, '-');
     this.logFilePath = `logs/${this.sessionId}.log`;
+
+    // Clean up old logs on startup to prevent quota issues
+    this.performStartupCleanup();
+
     this.initializeLogFile();
+  }
+
+  /**
+   * Perform cleanup on startup to prevent storage quota issues
+   */
+  private performStartupCleanup(): void {
+    if (typeof window !== 'undefined') {
+      try {
+        // Check total storage usage
+        let totalSize = 0;
+        const logKeys: string[] = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('logs/')) {
+            const value = localStorage.getItem(key);
+            if (value) {
+              totalSize += value.length;
+              logKeys.push(key);
+            }
+          }
+        }
+
+        // If total logs exceed 1MB, clear all old logs
+        if (totalSize > 1024 * 1024) {
+          logKeys.forEach(key => localStorage.removeItem(key));
+          console.log(`Startup cleanup: Removed ${logKeys.length} log files (${Math.round(totalSize / 1024)}KB) to prevent quota issues`);
+        }
+      } catch (error) {
+        console.warn('Startup cleanup failed:', error);
+      }
+    }
   }
 
   private initializeLogFile(): void {
@@ -186,19 +222,70 @@ ${this.formatBoard(boardAfter)}
   private writeToLog(content: string): void {
     // Always log to console for immediate debugging
     console.log(content);
-    
+
     // In browser environment, store in localStorage and provide download functionality
     if (typeof window !== 'undefined') {
-      const existingLogs = localStorage.getItem(this.logFilePath) || '';
-      localStorage.setItem(this.logFilePath, existingLogs + content);
-      
-      // Also store in sessionStorage for current session
-      const sessionKey = `current-session-${this.sessionId}`;
-      const sessionLogs = sessionStorage.getItem(sessionKey) || '';
-      sessionStorage.setItem(sessionKey, sessionLogs + content);
+      try {
+        const existingLogs = localStorage.getItem(this.logFilePath) || '';
+        const newLogs = existingLogs + content;
+
+        // Check if logs are getting too large (limit to 2MB per file)
+        if (newLogs.length > 2 * 1024 * 1024) {
+          // Clear old logs and start fresh
+          this.clearOldLogs();
+          localStorage.setItem(this.logFilePath, content);
+        } else {
+          localStorage.setItem(this.logFilePath, newLogs);
+        }
+
+        // Also store in sessionStorage for current session (with smaller limit)
+        const sessionKey = `current-session-${this.sessionId}`;
+        const sessionLogs = sessionStorage.getItem(sessionKey) || '';
+        const newSessionLogs = sessionLogs + content;
+
+        if (newSessionLogs.length > 500 * 1024) { // 500KB limit for session
+          sessionStorage.setItem(sessionKey, content); // Start fresh
+        } else {
+          sessionStorage.setItem(sessionKey, newSessionLogs);
+        }
+      } catch (error) {
+        // Handle quota exceeded error
+        console.warn('Storage quota exceeded, clearing old logs:', error);
+        this.clearOldLogs();
+        try {
+          localStorage.setItem(this.logFilePath, content);
+        } catch (retryError) {
+          console.error('Failed to write logs even after cleanup:', retryError);
+        }
+      }
     } else {
       // Node.js environment - would write to actual file
       console.log(`[LOG] ${content}`);
+    }
+  }
+
+  /**
+   * Clear old logs to free up storage space
+   */
+  private clearOldLogs(): void {
+    if (typeof window !== 'undefined') {
+      // Remove all localStorage keys that start with 'logs/' except current session
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('logs/') && key !== this.logFilePath) {
+          keysToRemove.push(key);
+        }
+      }
+
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      // Also clear current file if it exists
+      if (localStorage.getItem(this.logFilePath)) {
+        localStorage.removeItem(this.logFilePath);
+      }
+
+      console.log(`Cleared ${keysToRemove.length + 1} old log files to free storage space`);
     }
   }
 
